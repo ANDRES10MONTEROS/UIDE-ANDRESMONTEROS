@@ -1,0 +1,30 @@
+import pygame
+import sys
+import random
+import json  # Para guardar y cargar resultados
+
+# Inicializar Pygame
+pygame.init()
+
+# Configuración de pantalla
+ANCHO, ALTO = 800, 600
+TAMANO_CELDA = 20
+
+# Colores
+NEGRO = (0, 0, 0)
+BLANCO = (255, 255, 255)
+AZUL = (0, 0, 255)
+ROJO = (255, 0, 0)
+VERDE_CLARO = (170, 215, 81)
+VERDE_OSCURO = (162, 209, 73)
+
+# Crear la pantalla
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Juego de la Serpiente")
+
+# Fuente
+fuente = pygame.font.Font(None, 36)
+
+
+
+

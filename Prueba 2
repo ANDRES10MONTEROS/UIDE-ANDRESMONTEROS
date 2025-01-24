@@ -1,0 +1,215 @@
+import pygame
+import random
+import sys
+
+# Inicializar Pygame
+pygame.init()
+
+# Configuración de pantalla y colores
+ANCHO = 600
+ALTO = 600
+TAMANO_CELDA = 20
+
+VERDE_OSCURO = (0, 100, 0)
+VERDE_CLARO = (0, 150, 0)
+AZUL = (0, 0, 255)
+ROJO = (255, 0, 0)
+NEGRO = (0, 0, 0)
+BLANCO = (255, 255, 255)
+
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Juego de la Serpiente")
+
+# Fuente
+fuente = pygame.font.SysFont(None, 40)
+
+# Función para mostrar texto
+def mostrar_texto(texto, y_pos, fuente, color):
+    texto_render = fuente.render(texto, True, color)
+    texto_rect = texto_render.get_rect(center=(ANCHO // 2, y_pos))
+    pantalla.blit(texto_render, texto_rect)
+
+# Pantalla de fin de partida
+def pantalla_fin(puntaje):
+    while True:
+        pantalla.fill(NEGRO)
+        mostrar_texto("¡Juego Terminado!", 100, fuente, BLANCO)
+        mostrar_texto(f"Puntaje Final: {puntaje}", 200, fuente, BLANCO)
+        mostrar_texto("1. Nueva Partida", 300, fuente, BLANCO)
+        mostrar_texto("2. Ver Resultados", 350, fuente, BLANCO)
+        mostrar_texto("Presiona ESC para salir", 400, fuente, BLANCO)
+        pygame.display.update()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_1:
+                    main_juego()  # Iniciar nueva partida
+                elif evento.key == pygame.K_2:
+                    menu()  # Volver al menú principal
+                elif evento.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
+# Pantalla de inicio de sesión
+def iniciar_sesion():
+    usuario = ""
+    contrasena = ""
+    activo_usuario = True
+    while True:
+        pantalla.fill(NEGRO)
+        mostrar_texto("Iniciar sesión", 50, fuente, BLANCO)
+        mostrar_texto(f"Usuario: {usuario}", 150, fuente, BLANCO)
+        mostrar_texto(f"Contraseña: {contrasena}", 200, fuente, BLANCO)
+        mostrar_texto("Presiona ENTER para volver al menú", 300, fuente, BLANCO)
+        pygame.display.update()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.KEYDOWN:
+                if activo_usuario:
+                    if evento.key == pygame.K_RETURN:
+                        activo_usuario = False
+                    elif evento.key == pygame.K_BACKSPACE:
+                        usuario = usuario[:-1]
+                    else:
+                        usuario += evento.unicode
+                else:
+                    if evento.key == pygame.K_RETURN:
+                        return  # Volver al menú principal
+                    elif evento.key == pygame.K_BACKSPACE:
+                        contrasena = contrasena[:-1]
+                    else:
+                        contrasena += evento.unicode
+
+# Pantalla del menú principal
+def menu():
+    while True:
+        pantalla.fill(NEGRO)
+        mostrar_texto("Bienvenido al Juego de la Serpiente", 50, fuente, BLANCO)
+        mostrar_texto("1. Iniciar sesión", 150, fuente, BLANCO)
+        mostrar_texto("2. Iniciar Juego", 200, fuente, BLANCO)
+        mostrar_texto("3. Ver Resultados", 250, fuente, BLANCO)
+        mostrar_texto("Presiona ESC para salir", 300, fuente, BLANCO)
+        pygame.display.update()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_1:
+                    iniciar_sesion()
+                elif evento.key == pygame.K_2:
+                    main_juego()
+                elif evento.key == pygame.K_3:
+                    print("Resultados aún no implementados")
+                elif evento.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
+# Clase Serpiente
+class Serpiente:
+    def __init__(self):
+        self.cuerpo = [[5, 5]]  # Coordenadas iniciales (x, y)
+        self.direccion = (1, 0)  # Inicialmente se mueve hacia la derecha
+        self.crecer = False
+
+    def mover(self):
+        cabeza = self.cuerpo[0]
+        nueva_cabeza = [cabeza[0] + self.direccion[0], cabeza[1] + self.direccion[1]]
+        self.cuerpo.insert(0, nueva_cabeza)
+        if not self.crecer:
+            self.cuerpo.pop()
+        else:
+            self.crecer = False
+
+    def cambiar_direccion(self, nueva_direccion):
+        if (nueva_direccion[0] * -1, nueva_direccion[1] * -1) != self.direccion:
+            self.direccion = nueva_direccion
+
+    def comer_comida(self, comida):
+        if self.cuerpo[0] == comida.posicion:
+            self.crecer = True
+            return True
+        return False
+
+    def choca(self):
+        cabeza = self.cuerpo[0]
+        if cabeza[0] < 0 or cabeza[0] >= ANCHO // TAMANO_CELDA or cabeza[1] < 0 or cabeza[1] >= ALTO // TAMANO_CELDA:
+            return True
+        if cabeza in self.cuerpo[1:]:
+            return True
+        return False
+
+    def dibujar(self):
+        for segmento in self.cuerpo:
+            x, y = segmento
+            pygame.draw.rect(pantalla, AZUL, (x * TAMANO_CELDA, y * TAMANO_CELDA, TAMANO_CELDA, TAMANO_CELDA))
+
+# Clase Comida
+class Comida:
+    def __init__(self):
+        self.posicion = [random.randint(0, ANCHO // TAMANO_CELDA - 1), random.randint(0, ALTO // TAMANO_CELDA - 1)]
+
+    def nueva_posicion(self, serpiente):
+        while True:
+            self.posicion = [random.randint(0, ANCHO // TAMANO_CELDA - 1), random.randint(0, ALTO // TAMANO_CELDA - 1)]
+            if self.posicion not in serpiente.cuerpo:
+                break
+
+    def dibujar(self):
+        x, y = self.posicion
+        pygame.draw.rect(pantalla, ROJO, (x * TAMANO_CELDA, y * TAMANO_CELDA, TAMANO_CELDA, TAMANO_CELDA))
+
+# Juego principal
+def main_juego():
+    reloj = pygame.time.Clock()
+    serpiente = Serpiente()
+    comida = Comida()
+    puntaje = 0
+
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_UP:
+                    serpiente.cambiar_direccion((0, -1))
+                elif evento.key == pygame.K_DOWN:
+                    serpiente.cambiar_direccion((0, 1))
+                elif evento.key == pygame.K_LEFT:
+                    serpiente.cambiar_direccion((-1, 0))
+                elif evento.key == pygame.K_RIGHT:
+                    serpiente.cambiar_direccion((1, 0))
+
+        serpiente.mover()
+        if serpiente.comer_comida(comida):
+            comida.nueva_posicion(serpiente)
+            puntaje += 1
+
+        if serpiente.choca():
+            pantalla_fin(puntaje)  # Ir a la pantalla de fin si hay colisión
+
+def dibujar_fondo():
+     for x in range(0, ANCHO, TAMANO_CELDA):
+        for y in range(0, ALTO, TAMANO_CELDA):
+            rect = pygame.Rect(x, y, TAMANO_CELDA, TAMANO_CELDA)
+            if (x // TAMANO_CELDA + y // TAMANO_CELDA) % 2 == 0:
+                pygame.draw.rect(pantalla, VERDE_CLARO, rect)
+            else:
+                pygame.draw.rect(pantalla, VERDE_OSCURO, rect)
+
+        "serpiente.dibujar"()
+        "comida.dibujar"()
+        mostrar_texto(f"Puntaje: {puntaje}", 20, fuente, BLANCO)
+        pygame.display.update()
+        "reloj.tick"(10)
+
+# Ejecutar el menú principal
+menu()

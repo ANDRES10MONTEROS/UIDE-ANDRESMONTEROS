@@ -1,0 +1,112 @@
+import pygame
+import random
+
+# Inicializar pygame
+pygame.init()
+
+# Configuración de pantalla
+ANCHO = 800
+ALTO = 600
+TAMANIO_CELDA = 20
+
+# Colores
+COLOR_FONDO = (0, 0, 0)  # Verde
+COLOR_SNAKE = (0, 255, 0)  # Azul
+COLOR_COMIDA = (255, 0, 0)  # Rojo
+
+# Crear pantalla
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Juego de la Serpiente")
+
+# Reloj para controlar la velocidad
+reloj = pygame.time.Clock()
+
+# Función principal del juego
+def juego():
+    # Inicializar variables de la serpiente
+    snake_pos = [100, 50]  # Posición inicial de la serpiente
+    snake_cuerpo = [[100, 50], [90, 50], [80, 50]]  # Cuerpo inicial
+    direccion = 'DERECHA'
+    cambiar_direccion = direccion
+
+    # Inicializar comida
+    comida_pos = [random.randrange(1, (ANCHO // TAMANIO_CELDA)) * TAMANIO_CELDA,
+                  random.randrange(1, (ALTO // TAMANIO_CELDA)) * TAMANIO_CELDA]
+    comida_comida = True
+
+    # Puntuación
+    puntuacion = 0
+
+    # Bucle principal
+    while True:
+        # Eventos de teclado
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_UP and direccion != 'ABAJO':
+                    cambiar_direccion = 'ARRIBA'
+                if evento.key == pygame.K_DOWN and direccion != 'ARRIBA':
+                    cambiar_direccion = 'ABAJO'
+                if evento.key == pygame.K_LEFT and direccion != 'DERECHA':
+                    cambiar_direccion = 'IZQUIERDA'
+                if evento.key == pygame.K_RIGHT and direccion != 'IZQUIERDA':
+                    cambiar_direccion = 'DERECHA'
+
+        # Validar dirección
+        if cambiar_direccion == 'ARRIBA':
+            direccion = 'ARRIBA'
+        if cambiar_direccion == 'ABAJO':
+            direccion = 'ABAJO'
+        if cambiar_direccion == 'IZQUIERDA':
+            direccion = 'IZQUIERDA'
+        if cambiar_direccion == 'DERECHA':
+            direccion = 'DERECHA'
+
+        # Actualizar posición de la serpiente
+        if direccion == 'ARRIBA':
+            snake_pos[1] -= TAMANIO_CELDA
+        if direccion == 'ABAJO':
+            snake_pos[1] += TAMANIO_CELDA
+        if direccion == 'IZQUIERDA':
+            snake_pos[0] -= TAMANIO_CELDA
+        if direccion == 'DERECHA':
+            snake_pos[0] += TAMANIO_CELDA
+
+        # Crecimiento de la serpiente
+        snake_cuerpo.insert(0, list(snake_pos))
+        if snake_pos == comida_pos:
+            puntuacion += 10
+            comida_comida = True
+        else:
+            snake_cuerpo.pop()
+
+        if comida_comida:
+            comida_pos = [random.randrange(1, (ANCHO // TAMANIO_CELDA)) * TAMANIO_CELDA, random.randrange(1, (ALTO // TAMANIO_CELDA)) * TAMANIO_CELDA]
+            comida_comida = False
+
+        # Fin del juego: colisión con bordes
+        if (snake_pos[0] < 0 or snake_pos[0] >= ANCHO or
+                snake_pos[1] < 0 or snake_pos[1] >= ALTO):
+            break
+
+        # Fin del juego: colisión con sí misma
+        for bloque in snake_cuerpo[1:]:
+            if snake_pos == bloque:
+                break
+
+        # Dibujar elementos
+        pantalla.fill(COLOR_FONDO)
+        for bloque in snake_cuerpo:
+            pygame.draw.rect(pantalla, COLOR_SNAKE, pygame.Rect(bloque[0], bloque[1], TAMANIO_CELDA, TAMANIO_CELDA))
+        pygame.draw.rect(pantalla, COLOR_COMIDA, pygame.Rect(comida_pos[0], comida_pos[1], TAMANIO_CELDA, TAMANIO_CELDA))
+
+        # Actualizar pantalla
+        pygame.display.flip()
+
+        # Controlar velocidad
+        reloj.tick(15)
+
+# Iniciar el juego
+juego()
