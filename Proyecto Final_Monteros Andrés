@@ -196,4 +196,57 @@ def main_juego(jugador):
         pygame.display.update()
         reloj.tick(10)
 
+# Función para ingresar el nombre de usuario
+def ingresar_nombre():
+    nombre = ""
+    while True:
+        pantalla.fill(NEGRO)
+        mostrar_texto("Ingresa tu nombre:", 100, fuente, BLANCO)
+        mostrar_texto(nombre, 150, fuente, BLANCO)
+        mostrar_texto("Presiona Enter para continuar", 200, fuente, BLANCO)
+        pygame.display.update()
 
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_BACKSPACE:
+                    nombre = nombre[:-1]
+                elif evento.key == pygame.K_RETURN:
+                    if nombre != "":
+                        return nombre
+                else:
+                    nombre += evento.unicode
+
+# Menú principal
+def menu():
+    jugador = None
+    while True:
+        pantalla.fill(NEGRO)
+        mostrar_texto("Bienvenido al Juego de la Serpiente", 50, fuente, BLANCO)
+        mostrar_texto("1. Iniciar sesión", 150, fuente, BLANCO)
+        mostrar_texto("2. Iniciar Juego", 200, fuente, BLANCO)
+        mostrar_texto("3. Ver Resultados", 250, fuente, BLANCO)
+        mostrar_texto("Presiona ESC para salir", 300, fuente, BLANCO)
+        pygame.display.update()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_1:
+                    jugador = ingresar_nombre()
+                elif evento.key == pygame.K_2:
+                    if not jugador:
+                        jugador = "Jugador"
+                    main_juego(jugador)
+                elif evento.key == pygame.K_3:
+                    mostrar_resultados()
+                elif evento.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
+# Ejecutar el menú
+menu()
