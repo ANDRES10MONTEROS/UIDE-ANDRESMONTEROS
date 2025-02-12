@@ -25,6 +25,175 @@ pygame.display.set_caption("Juego de la Serpiente")
 # Fuente
 fuente = pygame.font.Font(None, 36)
 
+# Archivo para guardar resultados
+ARCHIVO_RESULTADOS = "resultados.json"
 
+# Mostrar texto en pantalla
+def mostrar_texto(texto, y, fuente, color, x_centrado=True):
+    superficie = fuente.render(texto, True, color)
+    rect = superficie.get_rect()
+    if x_centrado:
+        rect.centerx = ANCHO // 2
+    rect.y = y
+    pantalla.blit(superficie, rect)
+
+# Dibujar el fondo cuadriculado
+def dibujar_fondo():
+    for x in range(0, ANCHO, TAMANO_CELDA):
+        for y in range(0, ALTO, TAMANO_CELDA):
+            rect = pygame.Rect(x, y, TAMANO_CELDA, TAMANO_CELDA)
+            if (x // TAMANO_CELDA + y // TAMANO_CELDA) % 2 == 0:
+                pygame.draw.rect(pantalla, VERDE_CLARO, rect)
+            else:
+                pygame.draw.rect(pantalla, VERDE_OSCURO, rect)
+
+# Cargar resultados desde un archivo
+def cargar_resultados():
+    try:
+        with open(ARCHIVO_RESULTADOS, "r") as archivo:
+            return json.load(archivo)
+    except FileNotFoundError:
+        return {}
+
+# Guardar resultados en un archivo
+def guardar_resultados(nombre, puntaje):
+    resultados = cargar_resultados()
+    if nombre not in resultados or puntaje > resultados[nombre]:
+        resultados[nombre] = puntaje
+    with open(ARCHIVO_RESULTADOS, "w") as archivo:
+        json.dump(resultados, archivo)
+
+# Mostrar los resultados
+def mostrar_resultados():
+    resultados = cargar_resultados()
+    pantalla.fill(NEGRO)
+    mostrar_texto("Resultados", 50, fuente, BLANCO)
+    y = 100
+    for jugador, puntaje in sorted(resultados.items(), key=lambda x: x[1], reverse=True):
+        mostrar_texto(f"{jugador}: {puntaje}", y, fuente, BLANCO, x_centrado=False)
+        y += 40
+    mostrar_texto("Presiona cualquier tecla para volver al menú", ALTO - 50, fuente, BLANCO)
+    pygame.display.update()
+
+    # Esperar a que el jugador presione una tecla
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                return
+
+# Clase Serpiente
+class Serpiente:
+    def __init__(self):
+        self.cuerpo = [[5, 5]]
+        self.direccion = [1, 0]
+        self.necesita_crecer = False
+
+    def mover(self):
+        cabeza = self.cuerpo[0]
+        nueva_cabeza = [cabeza[0] + self.direccion[0], cabeza[1] + self.direccion[1]]
+        self.cuerpo.insert(0, nueva_cabeza)
+        if not self.necesita_crecer:
+            self.cuerpo.pop()
+        else:
+            self.necesita_crecer = False
+
+    def cambiar_direccion(self, direccion):
+        if (self.direccion[0] + direccion[0] != 0) or (self.direccion[1] + direccion[1] != 0):
+            self.direccion = direccion
+
+    def dibujar(self):
+        for segmento in self.cuerpo:
+            rect = pygame.Rect(segmento[0] * TAMANO_CELDA, segmento[1] * TAMANO_CELDA, TAMANO_CELDA, TAMANO_CELDA)
+            pygame.draw.rect(pantalla, AZUL, rect)
+
+    def comer_comida(self, comida):
+        return self.cuerpo[0] == comida.posicion
+
+    def crecer(self):
+        self.necesita_crecer = True
+
+    def choca(self):
+        cabeza = self.cuerpo[0]
+        if cabeza[0] < 0 or cabeza[0] >= ANCHO // TAMANO_CELDA or cabeza[1] < 0 or cabeza[1] >= ALTO // TAMANO_CELDA:
+            return True
+        if cabeza in self.cuerpo[1:]:
+            return True
+        return False
+
+# Clase Comida
+class Comida:
+    def __init__(self):
+        self.nueva_posicion([])
+
+    def nueva_posicion(self, excluidos):
+        while True:
+            x = random.randint(0, (ANCHO // TAMANO_CELDA) - 1)
+            y = random.randint(0, (ALTO // TAMANO_CELDA) - 1)
+            if [x, y] not in excluidos:
+                self.posicion = [x, y]
+                break
+
+    def dibujar(self):
+        rect = pygame.Rect(self.posicion[0] * TAMANO_CELDA, self.posicion[1] * TAMANO_CELDA, TAMANO_CELDA, TAMANO_CELDA)
+        pygame.draw.rect(pantalla, ROJO, rect)
+
+# Pantalla de fin del juego
+def pantalla_fin(puntaje, jugador):
+    guardar_resultados(jugador, puntaje)
+    while True:
+        pantalla.fill(NEGRO)
+        mostrar_texto("Juego Terminado", 200, fuente, BLANCO)
+        mostrar_texto(f"Puntaje: {puntaje}", 250, fuente, BLANCO)
+        mostrar_texto("Presiona cualquier tecla para volver al menú", 350, fuente, BLANCO)
+        pygame.display.update()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                return
+
+# Función principal del juego
+def main_juego(jugador):
+    reloj = pygame.time.Clock()
+    serpiente = Serpiente()
+    comida = Comida()
+    puntaje = 0
+
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_UP:
+                    serpiente.cambiar_direccion([0, -1])
+                elif evento.key == pygame.K_DOWN:
+                    serpiente.cambiar_direccion([0, 1])
+                elif evento.key == pygame.K_LEFT:
+                    serpiente.cambiar_direccion([-1, 0])
+                elif evento.key == pygame.K_RIGHT:
+                    serpiente.cambiar_direccion([1, 0])
+
+        serpiente.mover()
+        if serpiente.comer_comida(comida):
+            comida.nueva_posicion(serpiente.cuerpo)
+            puntaje += 1
+            serpiente.crecer()
+
+        if serpiente.choca():
+            pantalla_fin(puntaje, jugador)
+            return
+
+        dibujar_fondo()
+        serpiente.dibujar()
+        comida.dibujar()
+        mostrar_texto(f"Puntaje: {puntaje}", 10, fuente, BLANCO, x_centrado=False)
+        pygame.display.update()
+        reloj.tick(10)
 
 
